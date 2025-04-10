@@ -1,27 +1,28 @@
-# Start from a Python base image
 FROM python:3.10-slim
+
+# Install system dependencies required for building packages like llama-cpp-python
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# System dependencies for curl and other utilities
-RUN apt-get update && \
-    apt-get install -y curl && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install dependencies
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY app ./app
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Create models directory
-RUN mkdir -p /app/models
+# Copy the rest of the application
+COPY . .
 
-# Download TinyLlama GGUF model
-RUN curl -L -o /app/models/tinyllama.gguf https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-GGUF/resolve/main/tinyllama-1.1b-chat.q4_K_M.gguf
+# Expose the port your app runs on
+EXPOSE 8000
 
-# Run the server (adjust as per your actual command)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Run the app
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
