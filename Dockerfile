@@ -20,7 +20,7 @@ RUN pip install --upgrade pip && \
 
 # Copy the rest of the application
 COPY . .
-
+COPY models ./models
 # Expose the port your app runs on
 EXPOSE 8000
 
